@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "162299937201",
+    "project_id": "triqna-5ef64",
+    "storage_bucket": "triqna-5ef64.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:162299937201:android:6769d7b73462c964c37d90",
+        "android_client_info": {
+          "package_name": "com.example.data_hackathon"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAcRdOxZBTvdD9U_5wfW2MPT8nbeNkjyLo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

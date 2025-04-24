@@ -3,11 +3,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/user_model.dart';
 
-// lib/services/auth_service.dart
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  // Public getter for Firestore
+  FirebaseFirestore get firestore => _firestore;
+
+  // Access methods remain the same...
   Future<AppUser?> signInWithEmail(String email, String password) async {
     try {
       final userCred = await _auth.signInWithEmailAndPassword(email: email, password: password);

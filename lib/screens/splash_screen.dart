@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import '../services/auth_service.dart';
+import '../services/signup_screen.dart';
 import 'home_screen.dart';
+import 'login_screen.dart';
+
+
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({Key? key}) : super(key: key);
@@ -10,77 +15,54 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  Future<void> _initializeApp() async {
-    try {
-      await Firebase.initializeApp();
-      await Future.delayed(const Duration(seconds: 2));
-      if (mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
+  late AuthService _authService;
+
+  @override
+  void initState() {
+    super.initState();
+    _authService = AuthService();
+    _checkAuthStatus();
+  }
+
+  // A method that waits for Firebase auth state and checks Firestore
+  Future<void> _checkAuthStatus() async {
+    // Wait until Firebase is initialized
+    await Firebase.initializeApp();
+
+    // Now we can safely check the auth status after Firebase is initialized
+    final user = _authService.currentUser;
+
+    if (user != null) {
+      // Check if the user exists in Firestore
+      final userDoc = await _authService.firestore.collection('users').doc(user.uid).get();
+
+      if (userDoc.exists) {
+        // User exists in Firestore, navigate to the home screen
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+        );
+      } else {
+        // User doesn't exist in Firestore, navigate to registration screen
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const RegistrationScreen()),
         );
       }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error initializing app: $e')),
+    } else {
+      // No user is authenticated, navigate to login screen
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
       );
     }
   }
 
   @override
-  void initState() {
-    super.initState();
-    _initializeApp();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF3498DB),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Center(
-                child: Text(
-                  'triQna',
-                  style: TextStyle(
-                    color: const Color(0xFF3498DB),
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Community Road Issue Reporter',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 40),
-            const CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Making roads safer together',
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 14,
-              ),
-            ),
-          ],
-        ),
+        child: CircularProgressIndicator(), // Show loading indicator while checking auth state
       ),
     );
   }

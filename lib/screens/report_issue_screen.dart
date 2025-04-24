@@ -1,15 +1,17 @@
 import 'dart:io';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 
 class ReportIssueScreen extends StatefulWidget {
   final LatLng userLocation;
-  const ReportIssueScreen({Key? key, required this.userLocation}) : super(key: key);
 
+  const ReportIssueScreen({Key? key, required this.userLocation}) : super(key: key);
   @override
   State<ReportIssueScreen> createState() => _ReportIssueScreenState();
 }
@@ -107,6 +109,7 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
       try {
         String? imageUrl = await _uploadImage();
         await FirebaseFirestore.instance.collection('roadIssues').add({
+          'userId': FirebaseAuth.instance.currentUser!.uid, // Use non-nullable assertion if you're sure user is logged in
           'description': _description,
           'type': _issueType,
           'transportMode': _transportMode,
@@ -152,6 +155,13 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
   }
 
   Future<void> _addEcoRewards() async {
+    String? userId = FirebaseAuth.instance.currentUser?.uid;
+
+    if (userId == null) {
+      print('Cannot add eco rewards: No user logged in');
+      return;
+    }
+
     int rewardPoints = 0;
     switch (_transportMode) {
       case 'Walking':
@@ -169,9 +179,16 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
       default:
         rewardPoints = 2;
     }
-    await FirebaseFirestore.instance.collection('users').doc('current_user_id').set({
-      'ecoPoints': FieldValue.increment(rewardPoints),
-    }, SetOptions(merge: true));
+
+    try {
+      await FirebaseFirestore.instance.collection('users').doc(userId).set({
+        'ecoPoints': FieldValue.increment(rewardPoints),
+      }, SetOptions(merge: true));
+
+      print('Added $rewardPoints eco-points to user $userId');
+    } catch (e) {
+      print('Error adding eco rewards: $e');
+    }
   }
 
   @override

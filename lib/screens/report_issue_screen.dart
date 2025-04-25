@@ -28,9 +28,8 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
 
   final List<String> _issueTypes = [
     'Pothole',
-    'Damaged Road',
-    'Missing Sign',
-    'Broken Traffic Light',
+    'Traffic',
+    'Damaged Sign',
     'Flooded Road',
     'Other'
   ];

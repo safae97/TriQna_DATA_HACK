@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:firebase_auth/firebase_auth.dart';
@@ -63,6 +64,22 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
       });
     }
   }
+  String? _convertImageToBase64() {
+    if (_imageFile == null) return null;
+
+    try {
+      // Read the image file as bytes
+      List<int> imageBytes = _imageFile!.readAsBytesSync();
+
+      // Convert bytes to base64 string
+      String base64Image = base64Encode(imageBytes);
+
+      return base64Image;
+    } catch (e) {
+      print('Error converting image to base64: $e');
+      return null;
+    }
+  }
 
   Future<void> _pickPhoto() async {
     final XFile? image = await _imagePicker.pickImage(
@@ -97,36 +114,44 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
   Future<void> _submitReport() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
+
       if (_imageFile == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Please add a photo of the issue')),
         );
         return;
       }
+
       setState(() {
         _isSubmitting = true;
       });
+
       try {
-        String? imageUrl = await _uploadImage();
+        // Convert image to base64 string
+        String? base64Image = _convertImageToBase64();
+
         await FirebaseFirestore.instance.collection('roadIssues').add({
-          'userId': FirebaseAuth.instance.currentUser!.uid, // Use non-nullable assertion if you're sure user is logged in
+          'userId': FirebaseAuth.instance.currentUser!.uid,
           'description': _description,
           'type': _issueType,
           'transportMode': _transportMode,
           'latitude': _selectedLocation.latitude,
           'longitude': _selectedLocation.longitude,
-          'imageUrl': imageUrl,
+          'imageBase64': base64Image, // Store base64 encoded image
           'timestamp': DateTime.now(),
           'verificationCount': 0,
           'status': 'pending',
         });
+
         await _addEcoRewards();
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Issue reported successfully!'),
             backgroundColor: Colors.green,
           ),
         );
+
         Navigator.pop(context);
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(

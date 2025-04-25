@@ -113,7 +113,7 @@ class RoadIssue {
   final String transportMode;
   final int verificationCount;
   final DateTime timestamp;
-  final String? imageUrl;
+  final String? imageBase64; // Changed from imageUrl
 
   RoadIssue({
     required this.id,
@@ -125,7 +125,7 @@ class RoadIssue {
     required this.transportMode,
     required this.verificationCount,
     required this.timestamp,
-     this.imageUrl,
+     this.imageBase64,
   });
 
   LatLng get location => LatLng(latitude, longitude);
@@ -141,7 +141,7 @@ class RoadIssue {
       transportMode: map['transportMode'] ?? 'Unknown',
       verificationCount: map['verificationCount'] ?? 0,
       timestamp: (map['timestamp'] as Timestamp).toDate(),
-      imageUrl: map['imageUrl'],
+      imageBase64: map['imageBase64'], // Changed from imageUrl
     );
   }
 }

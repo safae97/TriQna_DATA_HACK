@@ -1,4 +1,6 @@
 
+import 'dart:convert';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -320,8 +322,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               const SizedBox(height: 8),
               Text(issue.description),
               const SizedBox(height: 8),
-              if (issue.imageUrl != null)
-                Image.network(issue.imageUrl!, height: 150),
+              if (issue.imageBase64 != null)
+                Image.network(issue.imageBase64!, height: 150),
               const SizedBox(height: 12),
               Text("Verified by: ${issue.verificationCount} users"),
               const SizedBox(height: 12),
@@ -407,6 +409,32 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
             const SizedBox(height: 20),
 
+            // Report Issue button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF3498DB),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ReportIssueScreen(userLocation: _userLocation),
+                    ),
+                  ).then((_) => _refreshAllData());
+                },
+                icon: const Icon(Icons.add_a_photo),
+                label: const Text('Report Issue'),
+              ),
+            ),
+            const SizedBox(height: 20),
+
             const Text(
               'Your Reports',
               style: TextStyle(
@@ -450,11 +478,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (report.imageUrl != null && report.imageUrl!.isNotEmpty)
+                          // Inside _buildUserProfile() method
+                          if (report.imageBase64 != null && report.imageBase64!.isNotEmpty)
                             ClipRRect(
                               borderRadius: BorderRadius.circular(8),
-                              child: Image.network(
-                                report.imageUrl!,
+                              child: Image.memory(
+                                base64Decode(report.imageBase64!),
                                 height: 80,
                                 width: 80,
                                 fit: BoxFit.cover,
@@ -529,32 +558,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               },
             ),
 
-            const SizedBox(height: 20),
 
-            // Report Issue button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF3498DB),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ReportIssueScreen(userLocation: _userLocation),
-                    ),
-                  ).then((_) => _refreshAllData());
-                },
-                icon: const Icon(Icons.add_a_photo),
-                label: const Text('Report Issue'),
-              ),
-            ),
           ],
         ),
       ),

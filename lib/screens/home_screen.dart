@@ -297,7 +297,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     switch (issueType.toLowerCase()) {
       case 'pothole':
         return Colors.red;
-      case 'damaged road':
+      case 'Traffic':
         return Colors.orange;
       case 'missing sign':
         return Colors.yellow[700] ?? Colors.yellow;
@@ -662,7 +662,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             children: [
               _legendItem(Colors.red, 'Pothole'),
               const SizedBox(width: 12),
-              _legendItem(Colors.orange, 'Damaged Road'),
+              _legendItem(Colors.orange, 'Traffic'),
               const SizedBox(width: 12),
               _legendItem(Colors.purple, 'Damaged Sign'),
               const SizedBox(width: 12),

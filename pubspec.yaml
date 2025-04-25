@@ -71,6 +71,12 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+  assets:
+    - assets/avatars/eco_level1.png
+    - assets/avatars/eco_level2.png
+    - assets/avatars/eco_level3.png
+    - assets/avatars/eco_level4.png
+    - assets/avatars/eco_level5.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:

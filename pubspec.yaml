@@ -78,6 +78,10 @@ flutter:
     - assets/avatars/eco_level3.png
     - assets/avatars/eco_level4.png
     - assets/avatars/eco_level5.png
+    - assets/avatars/logo.png
+    - assets/avatars/onboarding1.png
+    - assets/avatars/onboarding2.png
+    - assets/avatars/onboarding3.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:

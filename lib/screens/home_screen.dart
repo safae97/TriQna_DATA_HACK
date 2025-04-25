@@ -322,8 +322,21 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               const SizedBox(height: 8),
               Text(issue.description),
               const SizedBox(height: 8),
-              if (issue.imageBase64 != null)
-                Image.network(issue.imageBase64!, height: 150),
+              // Change this part to correctly display base64 image
+              if (issue.imageBase64 != null && issue.imageBase64!.isNotEmpty)
+                Image.memory(
+                  base64Decode(issue.imageBase64!),
+                  height: 150,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    height: 150,
+                    color: Colors.grey[300],
+                    child: const Center(
+                      child: Icon(Icons.image_not_supported, size: 50),
+                    ),
+                  ),
+                ),
               const SizedBox(height: 12),
               Text("Verified by: ${issue.verificationCount} users"),
               const SizedBox(height: 12),
@@ -355,8 +368,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         );
       },
     );
-  }
-  Future<void> _verifyIssue(String issueId, bool isUpvote) async {
+  }  Future<void> _verifyIssue(String issueId, bool isUpvote) async {
     DocumentReference issueRef = _firestore.collection('roadIssues').doc(issueId);
 
     await _firestore.runTransaction((transaction) async {

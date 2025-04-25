@@ -125,7 +125,7 @@ class RoadIssue {
     required this.transportMode,
     required this.verificationCount,
     required this.timestamp,
-    this.imageUrl,
+     this.imageUrl,
   });
 
   LatLng get location => LatLng(latitude, longitude);

@@ -33,6 +33,7 @@ class _ReportIssueScreenState extends State<ReportIssueScreen> {
     'Traffic',
     'Damaged Sign',
     'Flooded Road',
+    'Road Cracks',
     'Other'
   ];
 

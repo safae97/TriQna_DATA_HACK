@@ -301,10 +301,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         return Colors.red;
       case 'Traffic':
         return Colors.orange;
-      case 'missing sign':
+      case 'damaged sign':
         return Colors.yellow[700] ?? Colors.yellow;
-      default:
+      case 'Flooded Road':
+        return Colors.lightBlue;
+      case 'Road Cracks':
         return Colors.purple;
+      default:
+        return Colors.grey;
     }
   }
 

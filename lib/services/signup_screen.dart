@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../screens/home_screen.dart';
-import 'auth_service.dart';
+import '../services/auth_service.dart';
 
 class RegistrationScreen extends StatefulWidget {
   const RegistrationScreen({Key? key}) : super(key: key);
@@ -37,6 +37,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Register"),
+        backgroundColor: Color(0xFF20522F), // Dark green color
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -44,20 +45,34 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           children: [
             TextField(
               controller: _emailController,
-              decoration: const InputDecoration(labelText: "Email"),
+              decoration: InputDecoration(
+                labelText: "Email",
+                labelStyle: TextStyle(color: Color(0xFF20522F)), // Dark green label color
+                border: OutlineInputBorder(),
+              ),
             ),
+            const SizedBox(height: 16),
             TextField(
               controller: _passwordController,
               obscureText: true,
-              decoration: const InputDecoration(labelText: "Password"),
+              decoration: InputDecoration(
+                labelText: "Password",
+                labelStyle: TextStyle(color: Color(0xFF20522F)), // Dark green label color
+                border: OutlineInputBorder(),
+              ),
             ),
+            const SizedBox(height: 16),
             ElevatedButton(
               onPressed: _register,
-              child: const Text("Register"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white, // Dark green button color
+              ),
+              child: const Text("Register", style: TextStyle(color: Colors.white)), // White text color
             ),
           ],
         ),
       ),
+      backgroundColor: Colors.white, // White background color
     );
   }
 }

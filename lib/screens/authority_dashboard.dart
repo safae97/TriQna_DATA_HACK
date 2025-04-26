@@ -16,6 +16,15 @@ import '../models/road_issue.dart';
 import '../models/authority_model.dart';
 import '../services/authority_service.dart';
 import '../services/auth_service.dart';
+import 'login_screen.dart';
+
+// Define the color palette as constants
+class AppColors {
+  static const primaryColor = Color(0xFF20522F); // Dark green
+  static const secondaryColor = Color(0xFF4D9C2D); // Light green
+  static const white = Colors.white;
+  static const lightGreen = Color(0xFFE8F5E9); // Light background
+}
 
 class AuthorityDashboard extends StatefulWidget {
   final Authority authority;
@@ -54,9 +63,18 @@ class _AuthorityDashboardState extends State<AuthorityDashboard> with SingleTick
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Authority Dashboard - ${widget.authority.jurisdiction}'),
+        backgroundColor: AppColors.primaryColor,
+        foregroundColor: AppColors.white, // Text color
+        elevation: 2,
+        title: Text(
+          'Authority Dashboard - ${widget.authority.jurisdiction}',
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         bottom: TabBar(
           controller: _tabController,
+          indicatorColor: AppColors.white,
+          labelColor: AppColors.white,
+          unselectedLabelColor: AppColors.white.withOpacity(0.7),
           tabs: const [
             Tab(icon: Icon(Icons.list), text: 'Issues'),
             Tab(icon: Icon(Icons.map), text: 'Map View'),
@@ -66,20 +84,23 @@ class _AuthorityDashboardState extends State<AuthorityDashboard> with SingleTick
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await Provider.of<AuthService>(context, listen: false).signOut();
-              Navigator.of(context).pushReplacementNamed('/login');
+            onPressed: () {
+              AuthService().signOut();
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
             },
           ),
         ],
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildIssuesList(),
-          _buildMapView(),
-          _buildAnalyticsView(),
-        ],
+      body: Container(
+        color: AppColors.lightGreen.withOpacity(0.3), // Light background color
+        child: TabBarView(
+          controller: _tabController,
+          children: [
+            _buildIssuesList(),
+            _buildMapView(),
+            _buildAnalyticsView(),
+          ],
+        ),
       ),
     );
   }
@@ -93,7 +114,7 @@ class _AuthorityDashboardState extends State<AuthorityDashboard> with SingleTick
             stream: _getFilteredIssuesStream(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
+                return const Center(child: CircularProgressIndicator(color: AppColors.secondaryColor));
               }
 
               if (snapshot.hasError) {
@@ -103,7 +124,16 @@ class _AuthorityDashboardState extends State<AuthorityDashboard> with SingleTick
               final issues = snapshot.data ?? [];
 
               if (issues.isEmpty) {
-                return const Center(child: Text('No issues found.'));
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.warning_amber_rounded, size: 48, color: AppColors.primaryColor.withOpacity(0.6)),
+                      const SizedBox(height: 16),
+                      const Text('No issues found.', style: TextStyle(fontSize: 16, color: AppColors.primaryColor)),
+                    ],
+                  ),
+                );
               }
 
               return ListView.builder(
@@ -111,30 +141,27 @@ class _AuthorityDashboardState extends State<AuthorityDashboard> with SingleTick
                 itemBuilder: (context, index) {
                   final issue = issues[index];
                   return Card(
-                    margin: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 8),
+                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     child: ListTile(
-                      title: Text('${issue.type}: ${issue.description}'),
+                      title: Text(
+                        '${issue.type}: ${issue.description}',
+                        style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryColor),
+                      ),
                       subtitle: Text(
-                        'Location: (${issue.latitude.toStringAsFixed(
-                            4)}, ${issue.longitude.toStringAsFixed(4)})\n'
+                        'Location: (${issue.latitude.toStringAsFixed(4)}, ${issue.longitude.toStringAsFixed(4)})\n'
                             'Reported: ${_formatDate(issue.timestamp)}\n'
-                            'Transport: ${issue
-                            .transportMode} • Verifications: ${issue
-                            .verificationCount}',
+                            'Transport: ${issue.transportMode} • Verifications: ${issue.verificationCount}',
                       ),
                       isThreeLine: true,
                       trailing: PopupMenuButton<String>(
-                        onSelected: (value) =>
-                            _updateIssueStatus(issue.id, value),
-                        itemBuilder: (context) =>
-                        [
-                          const PopupMenuItem(
-                              value: 'pending', child: Text('Mark Pending')),
-                          const PopupMenuItem(value: 'in_progress',
-                              child: Text('Mark In Progress')),
-                          const PopupMenuItem(
-                              value: 'resolved', child: Text('Mark Resolved')),
+                        icon: const Icon(Icons.more_vert, color: AppColors.secondaryColor),
+                        onSelected: (value) => _updateIssueStatus(issue.id, value),
+                        itemBuilder: (context) => [
+                          const PopupMenuItem(value: 'pending', child: Text('Mark Pending')),
+                          const PopupMenuItem(value: 'in_progress', child: Text('Mark In Progress')),
+                          const PopupMenuItem(value: 'resolved', child: Text('Mark Resolved')),
                         ],
                       ),
                       onTap: () => _showIssueDetailsDialog(issue),
@@ -154,8 +181,7 @@ class _AuthorityDashboardState extends State<AuthorityDashboard> with SingleTick
     if (_selectedType != null) {
       return _authorityService.getIssuesByType(_selectedType!);
     } else if (_selectedTransportMode != null) {
-      return _authorityService.getIssuesByTransportMode(
-          _selectedTransportMode!);
+      return _authorityService.getIssuesByTransportMode(_selectedTransportMode!);
     } else if (_minVerifications > 0) {
       return _authorityService.getIssuesByMinVerification(_minVerifications);
     } else {
@@ -163,97 +189,126 @@ class _AuthorityDashboardState extends State<AuthorityDashboard> with SingleTick
     }
   }
 
-
   Widget _buildFilters() {
     return Card(
       margin: const EdgeInsets.all(8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      elevation: 2,
+      color: AppColors.white,
       child: Padding(
-        padding: const EdgeInsets.all(8.0),
+        padding: const EdgeInsets.all(12.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Filter Issues:',
-                style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              'Filter Issues:',
+              style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryColor, fontSize: 16),
+            ),
+            const SizedBox(height: 8),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
                   // Type filter
-                  DropdownButton<String>(
-                    hint: const Text('Type'),
-                    value: _selectedType,
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedType = value;
-                        _selectedTransportMode = null; // Reset other filters
-                        _minVerifications = 0;
-                      });
-                    },
-                    items: const [
-                      DropdownMenuItem(
-                          value: 'Pothole', child: Text('Potholes')),
-                      DropdownMenuItem(
-                          value: 'Road Cracks', child: Text('Road Cracks')),
-                      DropdownMenuItem(
-                          value: 'Damaged Sign', child: Text('Damaged Sign')),
-                      DropdownMenuItem(
-                          value: 'Flooded Road', child: Text('Flooding')),
-                      DropdownMenuItem(
-                          value: 'Traffic', child: Text('Traffic Issues')),
-                      DropdownMenuItem(
-                          value: 'Other', child: Text('Other Issues')),
-                    ],
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppColors.secondaryColor.withOpacity(0.4)),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: DropdownButton<String>(
+                      hint: const Text('Type', style: TextStyle(color: AppColors.primaryColor)),
+                      value: _selectedType,
+                      underline: const SizedBox(), // Remove underline
+                      icon: const Icon(Icons.arrow_drop_down, color: AppColors.secondaryColor),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedType = value;
+                          _selectedTransportMode = null; // Reset other filters
+                          _minVerifications = 0;
+                        });
+                      },
+                      items: const [
+                        DropdownMenuItem(value: 'Pothole', child: Text('Potholes')),
+                        DropdownMenuItem(value: 'Road Cracks', child: Text('Road Cracks')),
+                        DropdownMenuItem(value: 'Damaged Sign', child: Text('Damaged Sign')),
+                        DropdownMenuItem(value: 'Flooded Road', child: Text('Flooding')),
+                        DropdownMenuItem(value: 'Traffic', child: Text('Traffic Issues')),
+                        DropdownMenuItem(value: 'Other', child: Text('Other Issues')),
+                      ],
+                    ),
                   ),
                   const SizedBox(width: 16),
 
                   // Transport mode filter
-                  DropdownButton<String>(
-                    hint: const Text('Transport Mode'),
-                    value: _selectedTransportMode,
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedTransportMode = value;
-                        _selectedType = null; // Reset other filters
-                        _minVerifications = 0;
-                      });
-                    },
-                    items: const [
-                      DropdownMenuItem(value: 'Car', child: Text('Car')),
-                      DropdownMenuItem(
-                          value: 'Cycling', child: Text('Bicycle')),
-                      DropdownMenuItem(value: 'Electric Vehicle',
-                          child: Text('Electric Vehicle')),
-                      DropdownMenuItem(value: 'Public Transport',
-                          child: Text('Public Transport')),
-                      DropdownMenuItem(value: 'Other', child: Text('Others')),
-                    ],
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppColors.secondaryColor.withOpacity(0.4)),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: DropdownButton<String>(
+                      hint: const Text('Transport Mode', style: TextStyle(color: AppColors.primaryColor)),
+                      value: _selectedTransportMode,
+                      underline: const SizedBox(), // Remove underline
+                      icon: const Icon(Icons.arrow_drop_down, color: AppColors.secondaryColor),
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedTransportMode = value;
+                          _selectedType = null; // Reset other filters
+                          _minVerifications = 0;
+                        });
+                      },
+                      items: const [
+                        DropdownMenuItem(value: 'Car', child: Text('Car')),
+                        DropdownMenuItem(value: 'Cycling', child: Text('Bicycle')),
+                        DropdownMenuItem(value: 'Electric Vehicle', child: Text('Electric Vehicle')),
+                        DropdownMenuItem(value: 'Public Transport', child: Text('Public Transport')),
+                        DropdownMenuItem(value: 'Other', child: Text('Others')),
+                      ],
+                    ),
                   ),
                   const SizedBox(width: 16),
 
                   // Verification filter
-                  DropdownButton<int>(
-                    hint: const Text('Min Verifications'),
-                    value: _minVerifications > 0 ? _minVerifications : null,
-                    onChanged: (value) {
-                      setState(() {
-                        _minVerifications = value ?? 0;
-                        _selectedType = null; // Reset other filters
-                        _selectedTransportMode = null;
-                      });
-                    },
-                    items: [1, 2, 5, 10].map((int val) {
-                      return DropdownMenuItem<int>(
-                        value: val,
-                        child: Text('$val+'),
-                      );
-                    }).toList(),
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppColors.secondaryColor.withOpacity(0.4)),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: DropdownButton<int>(
+                      hint: const Text('Min Verifications', style: TextStyle(color: AppColors.primaryColor)),
+                      value: _minVerifications > 0 ? _minVerifications : null,
+                      underline: const SizedBox(), // Remove underline
+                      icon: const Icon(Icons.arrow_drop_down, color: AppColors.secondaryColor),
+                      onChanged: (value) {
+                        setState(() {
+                          _minVerifications = value ?? 0;
+                          _selectedType = null; // Reset other filters
+                          _selectedTransportMode = null;
+                        });
+                      },
+                      items: [1, 2, 5, 10].map((int val) {
+                        return DropdownMenuItem<int>(
+                          value: val,
+                          child: Text('$val+'),
+                        );
+                      }).toList(),
+                    ),
                   ),
                   const SizedBox(width: 16),
 
                   // Clear filters button
                   TextButton.icon(
-                    icon: const Icon(Icons.clear),
-                    label: const Text('Clear Filters'),
+                    icon: const Icon(Icons.clear, color: AppColors.secondaryColor),
+                    label: const Text('Clear Filters', style: TextStyle(color: AppColors.secondaryColor)),
+                    style: TextButton.styleFrom(
+                      backgroundColor: AppColors.lightGreen,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
                     onPressed: () {
                       setState(() {
                         _selectedType = null;
@@ -276,7 +331,7 @@ class _AuthorityDashboardState extends State<AuthorityDashboard> with SingleTick
       stream: _authorityService.getAllIssues(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: CircularProgressIndicator(color: AppColors.secondaryColor));
         }
 
         if (snapshot.hasError) {
@@ -306,6 +361,7 @@ class _AuthorityDashboardState extends State<AuthorityDashboard> with SingleTick
                 ),
                 MarkerLayer(
                   markers: issues.map((issue) {
+                    // Keep original color logic for markers
                     Color markerColor;
                     switch (issue.type) {
                       case 'Pothole':
@@ -316,7 +372,6 @@ class _AuthorityDashboardState extends State<AuthorityDashboard> with SingleTick
                         break;
                       case 'Damaged Sign':
                         markerColor = Colors.yellow[700] ?? Colors.yellow;
-                        ;
                         break;
                       case 'Flooded Road':
                         markerColor = Colors.lightBlue;
@@ -338,20 +393,17 @@ class _AuthorityDashboardState extends State<AuthorityDashboard> with SingleTick
                           children: [
                             Container(
                               decoration: BoxDecoration(
-                                color: markerColor,
+                                color: markerColor, // Keep original marker colors
                                 shape: BoxShape.circle,
-                                border: Border.all(
-                                    color: Colors.white, width: 2),
+                                border: Border.all(color: Colors.white, width: 2),
                               ),
                               padding: const EdgeInsets.all(8),
                               child: Text(
                                 issue.verificationCount.toString(),
-                                style: const TextStyle(color: Colors.white,
-                                    fontWeight: FontWeight.bold),
+                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                               ),
                             ),
-                            const Icon(
-                                Icons.arrow_drop_down, color: Colors.black),
+                            const Icon(Icons.arrow_drop_down, color: Colors.black),
                           ],
                         ),
                       ),
@@ -364,8 +416,8 @@ class _AuthorityDashboardState extends State<AuthorityDashboard> with SingleTick
                       CircleMarker(
                         point: _filterCenter!,
                         radius: _filterRadius * 1000,
-                        color: Colors.blue.withOpacity(0.2),
-                        borderColor: Colors.blue,
+                        color: AppColors.secondaryColor.withOpacity(0.2),
+                        borderColor: AppColors.secondaryColor,
                         borderStrokeWidth: 2,
                       ),
                     ],
@@ -373,7 +425,6 @@ class _AuthorityDashboardState extends State<AuthorityDashboard> with SingleTick
               ],
             ),
 
-            // Map controls UI
 
           ],
         );
@@ -384,26 +435,53 @@ class _AuthorityDashboardState extends State<AuthorityDashboard> with SingleTick
   Widget _buildNearbyIssuesList(List<RoadIssue> nearbyIssues) {
     return Container(
       padding: const EdgeInsets.all(16),
+      decoration: const BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(16),
+          topRight: Radius.circular(16),
+        ),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             'Issues within ${_filterRadius.toStringAsFixed(1)} km',
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.primaryColor),
           ),
+          const Divider(color: AppColors.secondaryColor),
           const SizedBox(height: 8),
           Expanded(
             child: nearbyIssues.isEmpty
-                ? const Center(child: Text('No issues found in this area.'))
+                ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.location_off, size: 48, color: AppColors.primaryColor.withOpacity(0.5)),
+                  const SizedBox(height: 16),
+                  const Text('No issues found in this area.', style: TextStyle(color: AppColors.primaryColor)),
+                ],
+              ),
+            )
                 : ListView.builder(
               itemCount: nearbyIssues.length,
               itemBuilder: (context, index) {
                 final issue = nearbyIssues[index];
                 return ListTile(
-                  title: Text(issue.type),
+                  title: Text(issue.type, style: const TextStyle(color: AppColors.primaryColor)),
                   subtitle: Text(issue.description),
-                  trailing: Text('Verifications: ${issue.verificationCount}'),
+                  trailing: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: AppColors.secondaryColor,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      '${issue.verificationCount}',
+                      style: const TextStyle(color: AppColors.white, fontWeight: FontWeight.bold),
+                    ),
+                  ),
                   onTap: () {
                     Navigator.pop(context); // Close bottom sheet
                     _showIssueDetailsDialog(issue);
@@ -422,7 +500,7 @@ class _AuthorityDashboardState extends State<AuthorityDashboard> with SingleTick
       future: _getAnalyticsData(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: CircularProgressIndicator(color: AppColors.secondaryColor));
         }
 
         if (snapshot.hasError) {
@@ -440,48 +518,62 @@ class _AuthorityDashboardState extends State<AuthorityDashboard> with SingleTick
             children: [
               const Text(
                 'Analytics Dashboard',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.primaryColor),
               ),
               const SizedBox(height: 16),
 
               // Issues by type
               Card(
+                elevation: 3,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Issues by Type',
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
+                      const Row(
+                        children: [
+                          Icon(Icons.pie_chart, color: AppColors.primaryColor),
+                          SizedBox(width: 8),
+                          Text(
+                            'Issues by Type',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryColor),
+                          ),
+                        ],
                       ),
+                      const Divider(color: AppColors.secondaryColor),
                       const SizedBox(height: 16),
                       if (typeCounts != null && typeCounts.isNotEmpty)
                         ...typeCounts.entries.map((entry) {
                           return Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: Row(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Expanded(child: Text(entry.key)),
-                                Text(
-                                  entry.value.toString(),
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.bold),
+                                Row(
+                                  children: [
+                                    Expanded(child: Text(entry.key, style: const TextStyle(fontWeight: FontWeight.w500))),
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.secondaryColor,
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        entry.value.toString(),
+                                        style: const TextStyle(color: AppColors.white, fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  flex: 2,
-                                  child: LinearProgressIndicator(
-                                    value: entry.value /
-                                        typeCounts.values.reduce((a, b) =>
-                                        a > b
-                                            ? a
-                                            : b),
-                                    backgroundColor: Colors.grey[200],
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                        _getColorForType(entry.key)),
-                                  ),
+                                const SizedBox(height: 8),
+                                LinearProgressIndicator(
+                                  value: entry.value / typeCounts.values.reduce((a, b) => a > b ? a : b),
+                                  backgroundColor: Colors.grey[200],
+                                  valueColor: AlwaysStoppedAnimation<Color>(_getColorForType(entry.key)), // Keep original color logic
+                                  minHeight: 8,
+                                  borderRadius: BorderRadius.circular(4),
                                 ),
                               ],
                             ),
@@ -497,48 +589,61 @@ class _AuthorityDashboardState extends State<AuthorityDashboard> with SingleTick
 
               // Hotspots
               Card(
+                elevation: 3,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Top Issue Hotspots',
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
+                      const Row(
+                        children: [
+                          Icon(Icons.location_on, color: AppColors.primaryColor),
+                          SizedBox(width: 8),
+                          Text(
+                            'Top Issue Hotspots',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryColor),
+                          ),
+                        ],
                       ),
+                      const Divider(color: AppColors.secondaryColor),
                       const SizedBox(height: 16),
                       if (hotspots != null && hotspots.isNotEmpty)
                         ...hotspots.take(5).map((hotspot) {
-                          return ListTile(
-                            leading: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.red,
-                                shape: BoxShape.circle,
-                              ),
-                              padding: const EdgeInsets.all(8),
-                              child: Text(
-                                hotspot['count'].toString(),
-                                style: const TextStyle(color: Colors.white),
-                              ),
+                          return Card(
+                            elevation: 1,
+                            margin: const EdgeInsets.only(bottom: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              side: BorderSide(color: AppColors.secondaryColor.withOpacity(0.3)),
                             ),
-                            title: Text(
-                              'Location (${hotspot['latitude'].toStringAsFixed(
-                                  4)}, ${hotspot['longitude'].toStringAsFixed(
-                                  4)})',
+                            child: ListTile(
+                              leading: Container(
+                                decoration: const BoxDecoration(
+                                  color: Colors.red, // Keep red for hotspots
+                                  shape: BoxShape.circle,
+                                ),
+                                padding: const EdgeInsets.all(8),
+                                child: Text(
+                                  hotspot['count'].toString(),
+                                  style: const TextStyle(color: Colors.white),
+                                ),
+                              ),
+                              title: Text(
+                                'Location (${hotspot['latitude'].toStringAsFixed(4)}, ${hotspot['longitude'].toStringAsFixed(4)})',
+                                style: const TextStyle(fontWeight: FontWeight.w500),
+                              ),
+                              subtitle: Text('${hotspot['count']} issues reported'),
+                              trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: AppColors.secondaryColor),
+                              onTap: () {
+                                // Navigate to map and center on this location
+                                _tabController.animateTo(1); // Switch to map tab
+                                setState(() {
+                                  _filterCenter = LatLng(hotspot['latitude'], hotspot['longitude']);
+                                  _filterRadius = 1.0; // Start with a small radius
+                                });
+                              },
                             ),
-                            subtitle: Text(
-                                '${hotspot['count']} issues reported'),
-                            onTap: () {
-                              // Navigate to map and center on this location
-                              _tabController.animateTo(1); // Switch to map tab
-                              setState(() {
-                                _filterCenter = LatLng(
-                                    hotspot['latitude'], hotspot['longitude']);
-                                _filterRadius =
-                                1.0; // Start with a small radius
-                              });
-                            },
                           );
                         }).toList()
                       else
@@ -552,27 +657,37 @@ class _AuthorityDashboardState extends State<AuthorityDashboard> with SingleTick
 
               // Export options
               Card(
+                elevation: 3,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Export Reports',
-                        style: TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      const Row(
                         children: [
-
-                          ElevatedButton.icon(
-                            icon: const Icon(Icons.picture_as_pdf),
-                            label: const Text('PDF Report'),
-                            onPressed: () => _generateAndDownloadPdfReport(),
+                          Icon(Icons.file_download, color: AppColors.primaryColor),
+                          SizedBox(width: 8),
+                          Text(
+                            'Export Reports',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primaryColor),
                           ),
                         ],
+                      ),
+                      const Divider(color: AppColors.secondaryColor),
+                      const SizedBox(height: 16),
+                      Center(
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.picture_as_pdf),
+                          label: const Text('PDF Report'),
+                          style: ElevatedButton.styleFrom(
+                            foregroundColor: AppColors.white,
+                            backgroundColor: AppColors.primaryColor,
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          ),
+                          onPressed: () => _generateAndDownloadPdfReport(),
+                        ),
                       ),
                     ],
                   ),
@@ -590,8 +705,7 @@ class _AuthorityDashboardState extends State<AuthorityDashboard> with SingleTick
     final typeCounts = await _authorityService.getMostReportedTypes();
 
     // Get hotspots (areas with high concentration of issues)
-    final hotspots = await _authorityService.getHotspotAreas(
-        100); // Grid size parameter
+    final hotspots = await _authorityService.getHotspotAreas(100); // Grid size parameter
 
     return {
       'typeCounts': typeCounts,
@@ -600,6 +714,7 @@ class _AuthorityDashboardState extends State<AuthorityDashboard> with SingleTick
   }
 
   Color _getColorForType(String type) {
+    // Keep original color logic for issue types
     switch (type.toLowerCase()) {
       case 'pothole':
         return Colors.red;
@@ -618,62 +733,59 @@ class _AuthorityDashboardState extends State<AuthorityDashboard> with SingleTick
 
   void _showIssueDetailsDialog(RoadIssue issue) {
     showDialog(
-      context: context,
-      builder: (context) =>
-          AlertDialog(
-            title: Text(issue.type),
-            content: SingleChildScrollView(
-              child: Column(
+        context: context,
+        builder: (context) => AlertDialog(
+        title: Text(issue.type),
+        content: SingleChildScrollView(
+            child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Description: ${issue.description}'),
-                  const SizedBox(height: 8),
-                  Text('Location: (${issue.latitude.toStringAsFixed(6)}, ${issue
-                      .longitude.toStringAsFixed(6)})'),
-                  const SizedBox(height: 8),
-                  Text('Reported: ${_formatDate(issue.timestamp)}'),
-                  const SizedBox(height: 8),
-                  Text('Transport Mode: ${issue.transportMode}'),
-                  const SizedBox(height: 8),
-                  Text('Verifications: ${issue.verificationCount}'),
-                  const SizedBox(height: 8),
-                  Text('Reported by: ${issue.userId}'),
-                  const SizedBox(height: 16),
-                  if (issue.imageBase64 != null)
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Image:',
-                            style: TextStyle(fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 8),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.memory(
-                            _decodeBase64Image(issue.imageBase64!),
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ],
-                    ),
+            Text('Description: ${issue.description}'),
+            const SizedBox(height: 8),
+            Text('Location: (${issue.latitude.toStringAsFixed(6)}, ${issue.longitude.toStringAsFixed(6)})'),
+            const SizedBox(height: 8),
+            Text('Reported: ${_formatDate(issue.timestamp)}'),
+            const SizedBox(height: 8),
+            Text('Transport Mode: ${issue.transportMode}'),
+            const SizedBox(height: 8),
+            Text('Verifications: ${issue.verificationCount}'),
+            const SizedBox(height: 8),
+            Text('Reported by: ${issue.userId}'),
+            const SizedBox(height: 16),
+            if (issue.imageBase64 != null)
+        Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+        const Text('Image:', style: TextStyle(fontWeight: FontWeight.bold)),
+    const SizedBox(height: 8),
+    ClipRRect(
+    borderRadius: BorderRadius.circular(8),
+    child: Image.memory(
+    _decodeBase64Image(issue.imageBase64!),
+    width: double.infinity,
+      fit: BoxFit.cover,
+    ),
+    ),
+        ],
+        ),
                 ],
-              ),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Close'),
-              ),
-              TextButton(
-                onPressed: () {
-                  _updateIssueStatus(issue.id, 'resolved');
-                  Navigator.pop(context);
-                },
-                child: const Text('Mark Resolved'),
-              ),
-            ],
-          ),
+        ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Close'),
+            ),
+            TextButton(
+              onPressed: () {
+                _updateIssueStatus(issue.id, 'resolved');
+                Navigator.pop(context);
+              },
+              child: const Text('Mark Resolved'),
+            ),
+          ],
+        ),
     );
   }
 
@@ -686,7 +798,6 @@ class _AuthorityDashboardState extends State<AuthorityDashboard> with SingleTick
     }
   }
 
-
   void _showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
@@ -694,8 +805,7 @@ class _AuthorityDashboardState extends State<AuthorityDashboard> with SingleTick
   }
 
   String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute
-        .toString().padLeft(2, '0')}';
+    return '${date.day}/${date.month}/${date.year} ${date.hour}:${date.minute.toString().padLeft(2, '0')}';
   }
 
   Uint8List _decodeBase64Image(String base64String) {
@@ -721,9 +831,7 @@ class _AuthorityDashboardState extends State<AuthorityDashboard> with SingleTick
         areaName = 'Selected area in ${widget.authority.jurisdiction}';
       } else {
         // Get all issues from the stream
-        issues = await _authorityService
-            .getAllIssues()
-            .first;
+        issues = await _authorityService.getAllIssues().first;
       }
 
       if (issues.isEmpty) {
@@ -779,8 +887,7 @@ class _AuthorityDashboardState extends State<AuthorityDashboard> with SingleTick
       builder: (BuildContext context) {
         return AlertDialog(
           title: const Text('PDF Report Generated'),
-          content: const Text(
-              'Your report has been generated. What would you like to do with it?'),
+          content: const Text('Your report has been generated. What would you like to do with it?'),
           actions: [
             TextButton(
               onPressed: () {
@@ -793,8 +900,7 @@ class _AuthorityDashboardState extends State<AuthorityDashboard> with SingleTick
               onPressed: () {
                 Navigator.pop(context);
                 final now = DateTime.now();
-                final fileName = 'road_issues_${widget.authority.jurisdiction
-                    .replaceAll(' ', '_')}_${now.millisecondsSinceEpoch}.pdf';
+                final fileName = 'road_issues_${widget.authority.jurisdiction.replaceAll(' ', '_')}_${now.millisecondsSinceEpoch}.pdf';
                 _savePdfFile(pdfBytes, fileName);
               },
               child: const Text('Save & Open'),
@@ -803,8 +909,7 @@ class _AuthorityDashboardState extends State<AuthorityDashboard> with SingleTick
               onPressed: () {
                 Navigator.pop(context);
                 final now = DateTime.now();
-                final fileName = 'road_issues_${widget.authority.jurisdiction
-                    .replaceAll(' ', '_')}_${now.millisecondsSinceEpoch}.pdf';
+                final fileName = 'road_issues_${widget.authority.jurisdiction.replaceAll(' ', '_')}_${now.millisecondsSinceEpoch}.pdf';
                 _sharePdf(pdfBytes, fileName);
               },
               child: const Text('Share'),
@@ -832,82 +937,61 @@ class _AuthorityDashboardState extends State<AuthorityDashboard> with SingleTick
     pdf.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.a4,
-        build: (context) =>
-            pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Center(
-                  child: pw.Column(
-                    children: [
-                      pw.SizedBox(height: 40),
-                      pw.Text(
-                        'ROAD ISSUES REPORT',
-                        style: pw.TextStyle(font: fontBold,
-                            fontSize: 24,
-                            color: PdfColors.blue900),
-                      ),
-                      pw.SizedBox(height: 10),
-                      pw.Text(
-                        'Generated on ${DateFormat('MMMM dd, yyyy').format(
-                            DateTime.now())}',
-                        style: pw.TextStyle(font: fontItalic,
-                            fontSize: 14,
-                            color: PdfColors.grey700),
-                      ),
-                      pw.SizedBox(height: 30),
-                      pw.Container(
-                        width: 100,
-                        height: 2,
-                        color: PdfColors.blue900,
-                      ),
-                      pw.SizedBox(height: 30),
-                    ],
+        build: (context) => pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Center(
+              child: pw.Column(
+                children: [
+                  pw.SizedBox(height: 40),
+                  pw.Text(
+                    'ROAD ISSUES REPORT',
+                    style: pw.TextStyle(font: fontBold, fontSize: 24, color: PdfColors.blue900),
                   ),
-                ),
-
-                pw.Text(
-                  'Authority Information:',
-                  style: pw.TextStyle(
-                      font: fontBold, fontSize: 16, color: PdfColors.blue900),
-                ),
-                pw.SizedBox(height: 5),
-                _buildPdfInfoRow(
-                    'Jurisdiction:', widget.authority.jurisdiction, font,
-                    fontBold),
-                _buildPdfInfoRow(
-                    'Department:', widget.authority.department, font, fontBold),
-                _buildPdfInfoRow(
-                    'Authority ID:', widget.authority.uid, font, fontBold),
-                _buildPdfInfoRow('Report Area:', areaName, font, fontBold),
-                if (radiusKm > 0)
-                  _buildPdfInfoRow('Radius:', '$radiusKm km', font, fontBold),
-                _buildPdfInfoRow(
-                    'Total Issues:', '${issues.length}', font, fontBold),
-
-                pw.SizedBox(height: 20),
-
-                pw.Text(
-                  'Summary of Issues:',
-                  style: pw.TextStyle(
-                      font: fontBold, fontSize: 16, color: PdfColors.blue900),
-                ),
-                pw.SizedBox(height: 5),
-
-                // Issue type summary
-                _buildPdfIssueSummary(issues, font, fontBold),
-
-                pw.SizedBox(height: 30),
-
-                pw.Center(
-                  child: pw.Text(
-                    'This report contains detailed information about road issues reported in ${areaName}.',
-                    textAlign: pw.TextAlign.center,
-                    style: pw.TextStyle(
-                        font: font, fontSize: 12, color: PdfColors.grey700),
+                  pw.SizedBox(height: 10),
+                  pw.Text(
+                    'Generated on ${DateFormat('MMMM dd, yyyy').format(DateTime.now())}',
+                    style: pw.TextStyle(font: fontItalic, fontSize: 14, color: PdfColors.grey700),
                   ),
-                ),
-              ],
+                  pw.SizedBox(height: 30),
+                  pw.Container(
+                    width: 100,
+                    height: 2,
+                    color: PdfColors.blue900,
+                  ),
+                  pw.SizedBox(height: 30),
+                ],
+              ),
             ),
+            pw.Text(
+              'Authority Information:',
+              style: pw.TextStyle(font: fontBold, fontSize: 16, color: PdfColors.blue900),
+            ),
+            pw.SizedBox(height: 5),
+            _buildPdfInfoRow('Jurisdiction:', widget.authority.jurisdiction, font, fontBold),
+            _buildPdfInfoRow('Department:', widget.authority.department, font, fontBold),
+            _buildPdfInfoRow('Authority ID:', widget.authority.uid, font, fontBold),
+            _buildPdfInfoRow('Report Area:', areaName, font, fontBold),
+            if (radiusKm > 0) _buildPdfInfoRow('Radius:', '$radiusKm km', font, fontBold),
+            _buildPdfInfoRow('Total Issues:', '${issues.length}', font, fontBold),
+            pw.SizedBox(height: 20),
+            pw.Text(
+              'Summary of Issues:',
+              style: pw.TextStyle(font: fontBold, fontSize: 16, color: PdfColors.blue900),
+            ),
+            pw.SizedBox(height: 5),
+            // Issue type summary
+            _buildPdfIssueSummary(issues, font, fontBold),
+            pw.SizedBox(height: 30),
+            pw.Center(
+              child: pw.Text(
+                'This report contains detailed information about road issues reported in ${areaName}.',
+                textAlign: pw.TextAlign.center,
+                style: pw.TextStyle(font: font, fontSize: 12, color: PdfColors.grey700),
+              ),
+            ),
+          ],
+        ),
       ),
     );
 
@@ -915,40 +999,35 @@ class _AuthorityDashboardState extends State<AuthorityDashboard> with SingleTick
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
-        header: (context) =>
-            pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Row(
-                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                  children: [
-                    pw.Text(
-                      'Road Issues in ${widget.authority.jurisdiction}',
-                      style: pw.TextStyle(font: fontBold, fontSize: 14),
-                    ),
-                    pw.Text(
-                      'Page ${context.pageNumber} of ${context.pagesCount}',
-                      style: pw.TextStyle(font: font, fontSize: 12),
-                    ),
-                  ],
-                ),
-                pw.Divider(),
-              ],
-            ),
-        footer: (context) =>
+        header: (context) => pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
             pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.end,
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
               children: [
                 pw.Text(
-                  'Generated by triQna - ${DateFormat('MM/dd/yyyy').format(
-                      DateTime.now())}',
-                  style: pw.TextStyle(
-                      font: font, fontSize: 10, color: PdfColors.grey700),
+                  'Road Issues in ${widget.authority.jurisdiction}',
+                  style: pw.TextStyle(font: fontBold, fontSize: 14),
+                ),
+                pw.Text(
+                  'Page ${context.pageNumber} of ${context.pagesCount}',
+                  style: pw.TextStyle(font: font, fontSize: 12),
                 ),
               ],
             ),
-        build: (context) =>
-        [
+            pw.Divider(),
+          ],
+        ),
+        footer: (context) => pw.Row(
+          mainAxisAlignment: pw.MainAxisAlignment.end,
+          children: [
+            pw.Text(
+              'Generated by triQna - ${DateFormat('MM/dd/yyyy').format(DateTime.now())}',
+              style: pw.TextStyle(font: font, fontSize: 10, color: PdfColors.grey700),
+            ),
+          ],
+        ),
+        build: (context) => [
           pw.Table.fromTextArray(
             headerStyle: pw.TextStyle(font: fontBold, color: PdfColors.white),
             headerDecoration: const pw.BoxDecoration(
@@ -965,15 +1044,8 @@ class _AuthorityDashboardState extends State<AuthorityDashboard> with SingleTick
             },
             headerPadding: const pw.EdgeInsets.all(5),
             cellPadding: const pw.EdgeInsets.all(5),
-            headers: [
-              'Type',
-              'Description',
-              'Verifications',
-              'Transport',
-              'Reported Date'
-            ],
-            data: issues.map((issue) =>
-            [
+            headers: ['Type', 'Description', 'Verifications', 'Transport', 'Reported Date'],
+            data: issues.map((issue) => [
               issue.type,
               issue.description,
               issue.verificationCount.toString(),
@@ -981,22 +1053,15 @@ class _AuthorityDashboardState extends State<AuthorityDashboard> with SingleTick
               DateFormat('MM/dd/yyyy').format(issue.timestamp),
             ]).toList(),
           ),
-
           pw.SizedBox(height: 20),
-
           // Detailed issue information for most verified issues
           pw.Header(
             level: 1,
             text: 'Highest Priority Issues',
-            textStyle: pw.TextStyle(
-                font: fontBold, fontSize: 18, color: PdfColors.blue900),
+            textStyle: pw.TextStyle(font: fontBold, fontSize: 18, color: PdfColors.blue900),
           ),
-
           pw.SizedBox(height: 10),
-
-          ...issues
-              .where((issue) =>
-          issue.verificationCount > 2) // Only high priority issues
+          ...issues.where((issue) => issue.verificationCount > 2) // Only high priority issues
               .take(5) // Limit to top 5
               .map((issue) => _buildPdfDetailedIssue(issue, font, fontBold))
               .toList(),
@@ -1008,67 +1073,62 @@ class _AuthorityDashboardState extends State<AuthorityDashboard> with SingleTick
     pdf.addPage(
       pw.Page(
         pageFormat: PdfPageFormat.a4,
-        build: (context) =>
-            pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.Center(
-                  child: pw.Text(
-                    'Issue Locations Map',
-                    style: pw.TextStyle(
-                        font: fontBold, fontSize: 18, color: PdfColors.blue900),
-                  ),
-                ),
-                pw.SizedBox(height: 10),
-                pw.Center(
-                  child: pw.Container(
-                    width: 400,
-                    height: 400,
-                    decoration: pw.BoxDecoration(
-                      color: PdfColors.grey200,
-                      border: pw.Border.all(color: PdfColors.grey400),
-                    ),
-                    child: pw.Center(
-                      child: pw.Text(
-                        'Map visualization is available in the app',
-                        style: pw.TextStyle(font: fontItalic, fontSize: 12),
-                      ),
-                    ),
-                  ),
-                ),
-                pw.SizedBox(height: 20),
-                pw.Text(
-                  'Issue Coordinates:',
-                  style: pw.TextStyle(font: fontBold, fontSize: 14),
-                ),
-                pw.SizedBox(height: 5),
-
-                // Coordinates table
-                pw.Table.fromTextArray(
-                  headerStyle: pw.TextStyle(
-                      font: fontBold, color: PdfColors.white),
-                  headerDecoration: const pw.BoxDecoration(
-                    color: PdfColors.blue900,
-                  ),
-                  cellStyle: pw.TextStyle(font: font),
-                  cellHeight: 30,
-                  cellAlignments: {
-                    0: pw.Alignment.centerLeft,
-                    1: pw.Alignment.center,
-                    2: pw.Alignment.center,
-                  },
-                  headerPadding: const pw.EdgeInsets.all(5),
-                  cellPadding: const pw.EdgeInsets.all(5),
-                  headers: ['Issue Type', 'Latitude', 'Longitude'],
-                  data: issues.take(10).map((issue) =>
-                  [
-                    issue.type,
-                    issue.latitude.toStringAsFixed(6),
-                    issue.longitude.toStringAsFixed(6),
-                  ]).toList(),
-                ),
-              ],
+        build: (context) => pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.Center(
+              child: pw.Text(
+                'Issue Locations Map',
+                style: pw.TextStyle(font: fontBold, fontSize: 18, color: PdfColors.blue900),
+              ),
             ),
+            pw.SizedBox(height: 10),
+            pw.Center(
+              child: pw.Container(
+                width: 400,
+                height: 400,
+                decoration: pw.BoxDecoration(
+                  color: PdfColors.grey200,
+                  border: pw.Border.all(color: PdfColors.grey400),
+                ),
+                child: pw.Center(
+                  child: pw.Text(
+                    'Map visualization is available in the app',
+                    style: pw.TextStyle(font: fontItalic, fontSize: 12),
+                  ),
+                ),
+              ),
+            ),
+            pw.SizedBox(height: 20),
+            pw.Text(
+              'Issue Coordinates:',
+              style: pw.TextStyle(font: fontBold, fontSize: 14),
+            ),
+            pw.SizedBox(height: 5),
+            // Coordinates table
+            pw.Table.fromTextArray(
+              headerStyle: pw.TextStyle(font: fontBold, color: PdfColors.white),
+              headerDecoration: const pw.BoxDecoration(
+                color: PdfColors.blue900,
+              ),
+              cellStyle: pw.TextStyle(font: font),
+              cellHeight: 30,
+              cellAlignments: {
+                0: pw.Alignment.centerLeft,
+                1: pw.Alignment.center,
+                2: pw.Alignment.center,
+              },
+              headerPadding: const pw.EdgeInsets.all(5),
+              cellPadding: const pw.EdgeInsets.all(5),
+              headers: ['Issue Type', 'Latitude', 'Longitude'],
+              data: issues.take(10).map((issue) => [
+                issue.type,
+                issue.latitude.toStringAsFixed(6),
+                issue.longitude.toStringAsFixed(6),
+              ]).toList(),
+            ),
+          ],
+        ),
       ),
     );
 
@@ -1076,8 +1136,7 @@ class _AuthorityDashboardState extends State<AuthorityDashboard> with SingleTick
   }
 
   // Helper methods for PDF generation
-  pw.Widget _buildPdfInfoRow(String label, String value, pw.Font font,
-      pw.Font fontBold) {
+  pw.Widget _buildPdfInfoRow(String label, String value, pw.Font font, pw.Font fontBold) {
     return pw.Padding(
       padding: const pw.EdgeInsets.only(bottom: 5),
       child: pw.Row(
@@ -1102,8 +1161,7 @@ class _AuthorityDashboardState extends State<AuthorityDashboard> with SingleTick
   }
 
   // Build a summary of issues by type for PDF
-  pw.Widget _buildPdfIssueSummary(List<RoadIssue> issues, pw.Font font,
-      pw.Font fontBold) {
+  pw.Widget _buildPdfIssueSummary(List<RoadIssue> issues, pw.Font font, pw.Font fontBold) {
     // Count issues by type
     final typeCounts = <String, int>{};
     for (final issue in issues) {
@@ -1114,8 +1172,7 @@ class _AuthorityDashboardState extends State<AuthorityDashboard> with SingleTick
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: typeCounts.entries.map((entry) {
         // Calculate percentage
-        final percentage = issues.isEmpty ? 0 : (entry.value / issues.length *
-            100).toStringAsFixed(1);
+        final percentage = issues.isEmpty ? 0 : (entry.value / issues.length * 100).toStringAsFixed(1);
 
         return pw.Padding(
           padding: const pw.EdgeInsets.only(bottom: 5),
@@ -1132,8 +1189,7 @@ class _AuthorityDashboardState extends State<AuthorityDashboard> with SingleTick
                 child: pw.Row(
                   children: [
                     pw.Container(
-                      width: issues.isEmpty ? 0 : (entry.value / issues.length *
-                          200),
+                      width: issues.isEmpty ? 0 : (entry.value / issues.length * 200),
                       color: PdfColors.blue700,
                     ),
                   ],
@@ -1148,8 +1204,7 @@ class _AuthorityDashboardState extends State<AuthorityDashboard> with SingleTick
   }
 
   // Build a detailed issue block for PDF
-  pw.Widget _buildPdfDetailedIssue(RoadIssue issue, pw.Font font,
-      pw.Font fontBold) {
+  pw.Widget _buildPdfDetailedIssue(RoadIssue issue, pw.Font font, pw.Font fontBold) {
     return pw.Container(
       margin: const pw.EdgeInsets.only(bottom: 15),
       padding: const pw.EdgeInsets.all(10),
@@ -1165,26 +1220,19 @@ class _AuthorityDashboardState extends State<AuthorityDashboard> with SingleTick
             children: [
               pw.Text(
                 issue.type,
-                style: pw.TextStyle(
-                    font: fontBold, fontSize: 14, color: PdfColors.blue900),
+                style: pw.TextStyle(font: fontBold, fontSize: 14, color: PdfColors.blue900),
               ),
               pw.Text(
                 'Verifications: ${issue.verificationCount}',
-                style: pw.TextStyle(
-                    font: fontBold, fontSize: 12, color: PdfColors.red),
+                style: pw.TextStyle(font: fontBold, fontSize: 12, color: PdfColors.red),
               ),
             ],
           ),
           pw.Divider(),
           _buildPdfInfoRow('Description:', issue.description, font, fontBold),
-          _buildPdfInfoRow(
-              'Transport Mode:', issue.transportMode, font, fontBold),
-          _buildPdfInfoRow('Reported On:',
-              DateFormat('MM/dd/yyyy HH:mm').format(issue.timestamp), font,
-              fontBold),
-          _buildPdfInfoRow('Coordinates:',
-              '(${issue.latitude.toStringAsFixed(6)}, ${issue.longitude
-                  .toStringAsFixed(6)})', font, fontBold),
+          _buildPdfInfoRow('Transport Mode:', issue.transportMode, font, fontBold),
+          _buildPdfInfoRow('Reported On:', DateFormat('MM/dd/yyyy HH:mm').format(issue.timestamp), font, fontBold),
+          _buildPdfInfoRow('Coordinates:', '(${issue.latitude.toStringAsFixed(6)}, ${issue.longitude.toStringAsFixed(6)})', font, fontBold),
           _buildPdfInfoRow('Reporter ID:', issue.userId, font, fontBold),
         ],
       ),
@@ -1225,3 +1273,4 @@ class _AuthorityDashboardState extends State<AuthorityDashboard> with SingleTick
     }
   }
 }
+

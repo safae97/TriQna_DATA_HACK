@@ -1,4 +1,3 @@
-// lib/screens/register_authority_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
@@ -77,6 +76,7 @@ class _RegisterAuthorityScreenState extends State<RegisterAuthorityScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Register as Authority'),
+        backgroundColor: Color(0xFF20522F), // Dark green color
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -91,7 +91,7 @@ class _RegisterAuthorityScreenState extends State<RegisterAuthorityScreen> {
                 Icon(
                   Icons.admin_panel_settings,
                   size: 80,
-                  color: Theme.of(context).primaryColor,
+                  color: Color(0xFF4D9C2D), // Light green color
                 ),
                 const SizedBox(height: 32),
 
@@ -99,10 +99,11 @@ class _RegisterAuthorityScreenState extends State<RegisterAuthorityScreen> {
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Official Email',
+                    labelStyle: TextStyle(color: Color(0xFF20522F)), // Dark green label color
                     border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.email),
+                    prefixIcon: Icon(Icons.email, color: Color(0xFF4D9C2D)), // Light green icon
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -120,10 +121,11 @@ class _RegisterAuthorityScreenState extends State<RegisterAuthorityScreen> {
                 TextFormField(
                   controller: _passwordController,
                   obscureText: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Password',
+                    labelStyle: TextStyle(color: Color(0xFF20522F)), // Dark green label color
                     border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.lock),
+                    prefixIcon: Icon(Icons.lock, color: Color(0xFF4D9C2D)), // Light green icon
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -141,10 +143,11 @@ class _RegisterAuthorityScreenState extends State<RegisterAuthorityScreen> {
                 TextFormField(
                   controller: _confirmPasswordController,
                   obscureText: true,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Confirm Password',
+                    labelStyle: TextStyle(color: Color(0xFF20522F)), // Dark green label color
                     border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.lock_outline),
+                    prefixIcon: Icon(Icons.lock_outline, color: Color(0xFF4D9C2D)), // Light green icon
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -161,10 +164,11 @@ class _RegisterAuthorityScreenState extends State<RegisterAuthorityScreen> {
                 // Jurisdiction Field
                 TextFormField(
                   controller: _jurisdictionController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Jurisdiction (e.g., City, County)',
+                    labelStyle: TextStyle(color: Color(0xFF20522F)), // Dark green label color
                     border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.location_city),
+                    prefixIcon: Icon(Icons.location_city, color: Color(0xFF4D9C2D)), // Light green icon
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -178,10 +182,11 @@ class _RegisterAuthorityScreenState extends State<RegisterAuthorityScreen> {
                 // Department Field
                 TextFormField(
                   controller: _departmentController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Department (e.g., Roads, Transportation)',
+                    labelStyle: TextStyle(color: Color(0xFF20522F)), // Dark green label color
                     border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.business),
+                    prefixIcon: Icon(Icons.business, color: Color(0xFF4D9C2D)), // Light green icon
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -207,32 +212,20 @@ class _RegisterAuthorityScreenState extends State<RegisterAuthorityScreen> {
                 ElevatedButton(
                   onPressed: _isLoading ? null : _register,
                   style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFF20522F), // Dark green button color
                     padding: const EdgeInsets.symmetric(vertical: 16),
                   ),
                   child: _isLoading
                       ? const CircularProgressIndicator()
-                      : const Text('Register Authority Account'),
+                      : const Text('Register Authority Account', style: TextStyle(color: Colors.white)), // White text color
                 ),
                 const SizedBox(height: 16),
-
-                // Login Link
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text('Already have an account?'),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(context).pushReplacementNamed('/login');
-                      },
-                      child: const Text('Login'),
-                    ),
-                  ],
-                ),
               ],
             ),
           ),
         ),
       ),
+      backgroundColor: Colors.white, // White background color
     );
   }
 }

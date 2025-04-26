@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 
 import 'package:firebase_auth/firebase_auth.dart';
@@ -239,7 +238,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             child: GestureDetector(
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.6),
+                  color: const Color(0xFF4D9C2D).withOpacity(0.6),
                   shape: BoxShape.circle,
                   border: Border.all(color: Colors.white, width: 2),
                 ),
@@ -349,6 +348,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   ElevatedButton.icon(
                     icon: const Icon(Icons.thumb_up),
                     label: const Text("Still there"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF4D9C2D),
+                      foregroundColor: Colors.white,
+                    ),
                     onPressed: () async {
                       await _verifyIssue(issue.id, true);
                       Navigator.pop(context);
@@ -359,6 +362,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   ElevatedButton.icon(
                     icon: const Icon(Icons.thumb_down),
                     label: const Text("Not anymore"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF20522F),
+                      foregroundColor: Colors.white,
+                    ),
                     onPressed: () async {
                       await _verifyIssue(issue.id, false);
                       Navigator.pop(context);
@@ -372,7 +379,9 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         );
       },
     );
-  }  Future<void> _verifyIssue(String issueId, bool isUpvote) async {
+  }
+
+  Future<void> _verifyIssue(String issueId, bool isUpvote) async {
     DocumentReference issueRef = _firestore.collection('roadIssues').doc(issueId);
 
     await _firestore.runTransaction((transaction) async {
@@ -430,7 +439,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               width: double.infinity,
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF3498DB),
+                  backgroundColor: const Color(0xFF4D9C2D),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
@@ -466,11 +475,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   children: [
-                    const Icon(Icons.report_outlined, size: 60, color: Colors.grey),
+                    Icon(Icons.report_outlined, size: 60, color: Color(0xFF7B7B7B)),
                     const SizedBox(height: 16),
                     Text(
                       'You haven\'t reported any issues yet',
-                      style: TextStyle(color: Colors.grey[600]),
+                      style: TextStyle(color: Color(0xFF7B7B7B)),
                     ),
                   ],
                 ),
@@ -506,8 +515,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                 errorBuilder: (context, error, stackTrace) => Container(
                                   height: 80,
                                   width: 80,
-                                  color: Colors.grey[300],
-                                  child: const Icon(Icons.image_not_supported),
+                                  color: Color(0xFF7B7B7B),
+                                  child: const Icon(Icons.image_not_supported, color: Colors.white),
                                 ),
                               ),
                             )
@@ -540,7 +549,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
                                     fontSize: 14,
-                                    color: Colors.grey[600],
+                                    color: Color(0xFF7B7B7B),
                                   ),
                                 ),
                                 const SizedBox(height: 8),
@@ -551,12 +560,12 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                                       _formatDate(report.timestamp),
                                       style: TextStyle(
                                         fontSize: 12,
-                                        color: Colors.grey[600],
+                                        color: Color(0xFF7B7B7B),
                                       ),
                                     ),
                                     Row(
                                       children: [
-                                        const Icon(Icons.verified_user, size: 14),
+                                        Icon(Icons.verified_user, size: 14, color: Color(0xFF4D9C2D)),
                                         const SizedBox(width: 4),
                                         Text('${report.verificationCount}'),
                                       ],
@@ -612,7 +621,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           label,
           style: TextStyle(
             fontSize: 14,
-            color: Colors.grey[600],
+            color: Color(0xFF7B7B7B),
           ),
         ),
       ],
@@ -655,7 +664,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             onPressed: () async {
               await _getCurrentLocation();
             },
-            child: const Icon(Icons.my_location, color: Color(0xFF3498DB)),
+            child: Icon(Icons.my_location, color: Color(0xFF4D9C2D)),
           ),
         ),
         Positioned(
@@ -686,7 +695,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               const SizedBox(width: 12),
               _legendItem(Colors.purple, 'Damaged Sign'),
               const SizedBox(width: 12),
-              _legendItem(Colors.blue, 'Your Location'),
+              _legendItem(Color(0xFF4D9C2D), 'Your Location'),
             ],
           ),
         ),
@@ -725,7 +734,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             color: Colors.white,
           ),
         ),
-        backgroundColor: const Color(0xFF3498DB),
+        backgroundColor: Color(0xFF20522F),
         elevation: 0,
         actions: [
           IconButton(
@@ -743,6 +752,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: Colors.white,
+          labelStyle: TextStyle(color: Colors.white), // Added style for tab labels
+          labelColor: Colors.white, // Updated text color to white
           tabs: const [
             Tab(
               icon: Icon(Icons.map, color: Colors.white),
